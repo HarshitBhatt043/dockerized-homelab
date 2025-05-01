@@ -1,135 +1,181 @@
-# HomeLab Docker GitOps Deployment
+# HomeLab Dockerized GitOps Deployment
 
-This repository is designed to streamline the deployment and management of Docker containers in a HomeLab environment using GitOps principles. It provides a collection of Docker-based configurations and scripts, enabling automation and version control for containerized applications. The repository integrates seamlessly with GitOps tools, allowing for continuous deployment directly from the Git repository.
+This repository is designed for managing and deploying containerized applications using GitOps principles. It supports **HomeLab** setups by providing Docker-based service configurations and seamless Git-based automation using tools like [Komodo](https://komo.do/docs/intro). Each branch in this repository represents a self-contained deployment for a specific service or stack.
 
-## Features
+---
 
-- Docker-based configurations for various applications and services.
-- GitOps-powered automation and version control for deployments.
-- Seamless integration with GitOps tools for continuous deployment.
-- Simple process for managing and scaling containerized applications in a HomeLab.
+## 🚀 Features
 
-## Requirements
+- Declarative Docker configurations for individual services or stacks.
+- GitOps-powered continuous deployment.
+- Support for orphan-branch model to isolate deployments.
+- Works across different HomeLab environments.
+- Bash helpers to streamline branch and deployment workflows.
 
-- Git installed
-- Docker and Docker Compose
-- A GitOps tool like [Komodo](https://komo.do/docs/intro) configured and running
+---
 
-## Repository Structure
+## 📦 Requirements
 
-Each branch contains the main configuration and templates at its root directory.
+- [Git](https://git-scm.com/)
+- [Docker](https://www.docker.com/) and Docker Compose
+- A GitOps tool like [Komodo](https://komo.do/docs/intro) configured with webhook or polling
+- A target server (HomeLab device) with Docker runtime
 
-## Getting Started
+---
 
-To start using this repository, follow the steps below:
+## 📁 Repository Structure
+
+Each **branch** represents an independent service (e.g., `Nginx`, `Nextcloud`, `Jellyfin`) and contains:
+
+```
+.
+├── docker-compose.yml     # Main service definition
+├── .env                   # Optional environment variables
+├── setup.sh               # Optional initialization scripts
+└── README.md              # Service-specific notes
+```
+
+> ✅ Using orphan branches keeps service deployments clean, focused, and version-controlled.
+
+---
+
+## ⚙️ Getting Started
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://{{git-source}}/homelab10400/dockerized-homelab.git
-cd dockerized-homelab
+git clone https://{{git-source}}/{{user-name}}/{{repo-name}}.git
+cd {{repo-name}}
 ```
 
-### 2. Create a New Branch
-
-To create a new branch for your HomeLab containerized application, use the following naming convention:  
-**Branch Naming Convention:**
-
-```yaml
-ServiceName
-```
-
-**Example:**  
-`Nginx`
-
-Create the orphan branch:
+### 2. Create a New Orphan Branch
 
 ```bash
-git checkout --orphan Nginx
+git checkout --orphan <ServiceName>
 ```
 
-### 3. Make Changes and Commit
-
-After creating your new branch, make any modifications to Docker configs, scripts, or services.
-
-1. Stage the changes:
-
-    ```bash
-    git add .
-    ```
-
-2. Commit them with a descriptive message:
-
-    ```bash
-    git commit -m "Your commit message"
-    ```
-
-### 4. Push Your Branch
-
-```bash
-git push origin Nginx
-```
-
-### 5. Set Up Continuous Deployment
-
-After pushing your branch, set up continuous deployment using Komodo. This ensures changes in the repository automatically trigger deployments.
-
-#### Steps:
-
-1. **Choose a GitOps Tool**  
-   We are using [Komodo](https://komo.do/docs/intro) for GitOps operations.
-
-2. **Configure Komodo to Watch Your Repository**  
-   You can configure Komodo to monitor all branches or specific ones for deployment triggers.  
-   Follow the guide: [Set up a webhook in Komodo](https://komo.do/docs/webhooks)
-
-3. **Test Deployment**  
-   Push a small change to your branch and verify that Komodo detects the change and deploys it as expected.
+> 📛 **Branch Naming Convention:**  
+> Use a simple service name like `Nginx`, `Jellyfin`, `Plex`, etc.
 
 ---
 
-## Bash Helpers
+### 3. Configure Your Service
 
-You may find the following aliases and functions useful in your workflow.
+- Edit `docker-compose.yml` and supporting files.
+- Add `.env` for custom environment values if needed.
+- Optionally include setup scripts (e.g., `setup.sh`).
 
-### Add the following to `.bashrc` or `.bash_aliases`:
+Then:
 
 ```bash
-# Pull all local branches from remote
-alias pullall="for branch in \$(git branch | sed 's/^\* //'); do git checkout \$branch && git pull; done"
+git add .
+git commit -m "Add deployment for <ServiceName>"
+```
 
-# Enable Git autocompletion (if not already enabled)
-source /usr/share/bash-completion/completions/git
+---
 
-# Create an orphan branch easily
+### 4. Push the Branch
+
+```bash
+git push origin <ServiceName>
+```
+
+---
+
+### 5. Set Up GitOps Tool
+
+I recommend [Komodo](https://komo.do/docs/intro), but any GitOps-compatible tool will work.
+
+**Steps:**
+
+1. Configure the GitOps tool to monitor your repo or a specific branch.
+2. Set up a webhook or enable polling for automated triggers.
+3. Choose deployment mode: auto-sync or manual approvals.
+4. Test deployment by pushing a small change.
+
+🧪 **Verify:** Ensure the GitOps tool detects changes and updates the deployment automatically.
+
+---
+
+## 🧰 Bash Helpers
+
+Useful aliases and functions for managing Git branches and deployments. Add to `.bashrc`, `.zshrc`, or `.bash_aliases`.
+
+### Pull All Branches and Sync
+
+```bash
+alias pullall='
+git fetch --prune --all && \
+current_branch=$(git branch --show-current); \
+for local_branch in $(git branch --format="%(refname:short)"); do \
+  if ! git show-ref --verify --quiet refs/remotes/origin/$local_branch; then \
+    echo "🧹 Deleting local branch $local_branch (no longer exists on origin)..."; \
+    git branch -D $local_branch; \
+  fi; \
+done; \
+for remote_branch in $(git branch -r | grep -v "\->" | sed "s|origin/||"); do \
+  if git show-ref --verify --quiet refs/heads/$remote_branch; then \
+    echo "🔍 Checking branch $remote_branch (already exists locally)..."; \
+    ahead=$(git rev-list --left-right --count $remote_branch...origin/$remote_branch | awk "{print \$1}"); \
+    behind=$(git rev-list --left-right --count $remote_branch...origin/$remote_branch | awk "{print \$2}"); \
+    if [ "$ahead" = "0" ] && [ "$behind" != "0" ]; then \
+      echo "  ⏩ Fast-forwarding $remote_branch..."; \
+      git update-ref refs/heads/$remote_branch refs/remotes/origin/$remote_branch; \
+    elif [ "$ahead" = "0" ] && [ "$behind" = "0" ]; then \
+      echo "  ✅ $remote_branch is already up-to-date."; \
+    else \
+      echo "  ⚠️ $remote_branch has diverged! Needs manual pull/merge."; \
+    fi; \
+  else \
+    echo "🌱 Creating missing local branch $remote_branch tracking origin/$remote_branch..."; \
+    git branch $remote_branch origin/$remote_branch; \
+  fi; \
+done; \
+git checkout $current_branch'
+```
+
+### Orphan Branch Creator
+
+```bash
 orphan() {
-  if [ -z "$1" ]; then
-    echo "Usage: orphan <branch-name>"
-    return 1
-  fi
-  git checkout --orphan "$1"
+    if [ -z "$1" ]; then
+        echo "Usage: orphan <branch-name>"
+        return 1
+    fi
+    git checkout --orphan "$1"
 }
 ```
 
+### Enable Git Autocompletion
+
+```bash
+source /usr/share/bash-completion/completions/git
+```
+
 ---
 
-**Branch Naming Reminder:**  
-Please follow the naming convention: `ServiceName`  
-_(e.g., `Nginx`, `Nextcloud`, `Jellyfin`)_
+## 🔁 Deployment Flow (Diagram)
+
+```
+  Git Branch (e.g., Nginx)
+           ↓
+     Git Commit/Push
+           ↓
+   GitOps Tool (e.g., Komodo)
+           ↓
+   Docker Compose Deployment
+           ↓
+        Target Host
+```
 
 ---
 
-## Deployment Flow (Diagram)
+## 📝 Notes
 
-```
-Git Branch (e.g., Nginx)
-      ↓
-  Git Commit/Push
-      ↓
-  Komodo GitOps Tool
-      ↓
-  Docker Deployment to Target Server/VM
-```
+- You can create multiple branches for different services and deploy them independently.
+- Avoid using `main` unless it contains meta or shared information.
+- Keep branches clean — remove unused files not relevant to the specific service.
+- Periodically review and test your GitOps configuration to ensure deployments stay consistent.
 
 ---
 **THIS REPOSITORY IS ENCRYPTED. IF YOU'RE HERE, YOU'RE EITHER VERY BRAVE OR VERY LOST. EITHER WAY, GOOD LUCK!**
