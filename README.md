@@ -1,5 +1,11 @@
 # HomeLab Dockerized GitOps Deployment
 
+[![HomeLab](https://img.shields.io/badge/HomeLab-Self%20Hosted-4CAF50?style=for-the-badge&logo=serverfault&logoColor=white)]()
+[![GitOps](https://img.shields.io/badge/GitOps-Automated%20Deployments-0A7ACC?style=for-the-badge&logo=git&logoColor=white)]()
+[![Docker](https://img.shields.io/badge/Docker-Compose%20Driven-2496ED?style=for-the-badge&logo=docker&logoColor=white)]()
+[![Komodo](https://img.shields.io/badge/Komodo-CI%2FCD%20Automation-6E40C9?style=for-the-badge&logo=replit&logoColor=white)]()
+[![Security](https://img.shields.io/badge/Security-Secrets%20Protected-2BAF2B?style=for-the-badge&logo=shield&logoColor=white)]()
+
 This repository implements a **GitOps-based infrastructure management system** for Dockerized services in HomeLab environments. Each orphan branch contains self-contained service configurations, enabling isolated deployments with automatic synchronization through [Komodo](https://komo.do/docs/intro) automation. Designed for reproducibility, scalability, and version-controlled infrastructure as code.
 
 ### Key Benefits
@@ -11,19 +17,26 @@ This repository implements a **GitOps-based infrastructure management system** f
 
 ---
 
-## 📚 Table of Contents
+## 📚 Table of Contents <a id="table-of-contents"></a>
 
 1. [Requirements](#requirements)
 2. [Repository Structure](#repository-structure)
+   - [Directory Breakdown](#directory-breakdown)
 3. [Branching Workflow](#branching-workflow)
+   - [GitOps Branch Lifecycle](#gitops-branch-lifecycle)
+   - [Creating a New Service Branch](#creating-a-new-service-branch)
 4. [Working Process](#working-process)
 5. [Security & Best Practices](#security--best-practices)
+   - [Secrets Management](#secrets-management)
+   - [Maintenance Tasks](#maintenance-tasks)
 6. [FAQ/Troubleshooting](#faqtroubleshooting)
+   - [Port Conflict Resolution](#port-conflict-resolution)
 7. [Advanced Architecture](#advanced-architecture)
+   - [System Flow](#system-flow)
 
 ---
 
-## Requirements
+## Requirements <a id="requirements"></a>
 
 ### Core Dependencies
 
@@ -38,7 +51,7 @@ This repository implements a **GitOps-based infrastructure management system** f
 
 ---
 
-## Repository Structure
+## Repository Structure <a id="repository-structure"></a>
 
 ```mermaid
 graph TD
@@ -62,7 +75,7 @@ graph TD
     Jellyfin --> J4[README.md]
 ```
 
-### Directory Breakdown
+### Directory Breakdown <a id="directory-breakdown"></a>
 
 This repository uses **orphan branches** to manage each service independently. The `main` branch serves only as a landing page and reference index.
 
@@ -106,7 +119,7 @@ services:
 
 ---
 
-## Branching Workflow
+## Branching Workflow <a id="branching-workflow"></a>
 
 ```mermaid
 graph LR
@@ -119,7 +132,7 @@ graph LR
     Jellyfin --> N3["compose.yml → Jellyfin Container"]
 ```
 
-### GitOps Branch Lifecycle
+### GitOps Branch Lifecycle <a id="gitops-branch-lifecycle"></a>
 
 ```mermaid
 sequenceDiagram
@@ -137,7 +150,7 @@ sequenceDiagram
     Komodo->>Dev: Deployment status
 ```
 
-### Creating a New Service Branch
+### Creating a New Service Branch <a id="creating-a-new-service-branch"></a>
 
 ```bash
 # Create orphan branch
@@ -155,7 +168,7 @@ git push origin plex  # Triggers Komodo deployment
 
 ---
 
-## Working Process
+## Working Process <a id="working-process"></a>
 
 ### Deployment Workflow
 
@@ -179,9 +192,9 @@ graph TB
 
 ---
 
-## Security & Best Practices
+## Security & Best Practices <a id="security--best-practices"></a>
 
-### Secrets Management
+### Secrets Management <a id="secrets-management"></a>
 
 ```mermaid
 graph LR
@@ -201,7 +214,7 @@ PLEX_CLAIM=your_claim_token
 TZ=America/New_York
 ```
 
-### Maintenance Tasks
+### Maintenance Tasks <a id="maintenance-tasks"></a>
 
 ```bash
 # Update base images
@@ -213,14 +226,14 @@ docker image prune -a
 
 ---
 
-## FAQ/Troubleshooting
+## FAQ/Troubleshooting <a id="faqtroubleshooting"></a>
 
 | Problem              | Solution             | Command           |
 | -------------------- | -------------------- | ----------------- |
 | Service not starting | Check port conflicts | `docker ps -a`    |
 | Komodo sync failure  | Validate config      | `komodo validate` |
 
-### Port Conflict Resolution
+### Port Conflict Resolution <a id="port-conflict-resolution"></a>
 
 ```bash
 # Error: "driver failed programming external connectivity"
@@ -230,7 +243,7 @@ docker stop <conflicting_container>
 
 ---
 
-## Advanced Architecture
+## Advanced Architecture <a id="advanced-architecture"></a>
 
 ```mermaid
 sequenceDiagram
@@ -285,7 +298,7 @@ sequenceDiagram
 
 ```
 
-### System Flow
+### System Flow <a id="system-flow"></a>
 
 1. Developers work locally and **commit changes to specific orphan branches**, one per service (e.g., Nginx, Nextcloud, Jellyfin).  
    Each branch contains service-specific files like `compose.yml`, `.env`, `setup.sh`, and `README.md`.
@@ -308,4 +321,6 @@ sequenceDiagram
 8. The **main branch** remains the root branch containing only the top-level `README.md` file and no service files.
 
 ---
+
+[⬆️ Back to Top](#table-of-contents)
 **THIS REPOSITORY IS ENCRYPTED. IF YOU'RE HERE, YOU'RE EITHER VERY BRAVE OR VERY LOST. EITHER WAY, GOOD LUCK!**
